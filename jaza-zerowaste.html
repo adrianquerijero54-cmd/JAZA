@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAZA ZeroWaste Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --soil-dark:   #1a1208;
+  --soil-mid:    #2e1f0a;
+  --soil-warm:   #4a3010;
+  --clay:        #7a5228;
+  --ochre:       #b87a2e;
+  --sun:         #e8a832;
+  --leaf-dark:   #1e3a18;
+  --leaf-mid:    #2e5c22;
+  --leaf:        #4a8c38;
+  --sprout:      #78b858;
+  --danger:      #c0392b;
+  --danger-warm: #e85d3a;
+  --cream:       #f5f0e8;
+  --parchment:   #ede5d4;
+  --text:        #d8cdb8;
+  --glass:       rgba(26,18,8,0.6);
+  --glass-b:     rgba(184,122,46,0.15);
+  --speed:       0.55s;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--soil-dark);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  cursor: none;
+}
+.cursor {
+  position: fixed; width: 9px; height: 9px;
+  background: var(--sun); border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  mix-blend-mode: screen;
+  transition: width .25s, height .25s, background .25s;
+}
+.cursor-ring {
+  position: fixed; width: 28px; height: 28px;
+  border: 1px solid rgba(232,168,50,0.35);
+  border-radius: 50%; pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: width .3s, height .3s, border-color .3s;
+}
+body:has(.btn:hover) .cursor,
+body:has(a:hover) .cursor { width: 16px; height: 16px; background: var(--danger-warm); }
+body:has(.btn:hover) .cursor-ring,
+body:has(a:hover) .cursor-ring { width: 44px; height: 44px; border-color: rgba(232,93,58,0.4); }
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.bg-base {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #0e0904 0%, #1a1208 40%, #0f0d06 100%);
+}
+.bg-overlay {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(8,5,2,0.75) 0%, rgba(12,8,3,0.55) 40%, rgba(10,7,3,0.65) 70%, rgba(8,5,2,0.88) 100%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, transparent 30%, rgba(5,3,1,0.35) 100%);
+}
+.soil-texture {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.025;
+  background-image: repeating-linear-gradient(
+    175deg,
+    transparent 0px, transparent 8px,
+    rgba(180,130,60,0.6) 8px, rgba(180,130,60,0.6) 9px
+  );
+}
+.ground { position: absolute; bottom: 0; left: 0; width: 100%; height: 42%; pointer-events: none; }
+.dust { position: absolute; inset: 0; pointer-events: none; }
+.mote {
+  position: absolute; border-radius: 50%;
+  background: rgba(232,168,50,0.5);
+  animation: moteFloat linear infinite, moteBlink ease-in-out infinite;
+}
+@keyframes moteFloat {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  33%  { transform: translate(15px,-30px) rotate(120deg); }
+  66%  { transform: translate(-10px,-60px) rotate(240deg); }
+  100% { transform: translate(5px,-100px) rotate(360deg); opacity:0; }
+}
+@keyframes moteBlink { 0%,100%{opacity:0} 30%,70%{opacity:1} }
+.grain {
+  position: fixed; inset: 0; z-index: 998; pointer-events: none; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  padding: 20px 52px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: linear-gradient(180deg, rgba(10,7,3,0.9) 0%, transparent 100%);
+}
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.15rem; font-weight: 900;
+  color: var(--ochre); letter-spacing: 4px; text-transform: uppercase; line-height: 1;
+}
+.logo span {
+  display: block; font-family: 'Barlow', sans-serif; font-size: 0.58rem;
+  font-weight: 400; letter-spacing: 5px; color: var(--clay); margin-top: 3px; text-transform: uppercase;
+}
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-size: 0.74rem; font-weight: 600; letter-spacing: 2.5px;
+  text-transform: uppercase; color: rgba(200,180,140,0.55);
+  text-decoration: none; cursor: none; position: relative; transition: color .3s;
+}
+.nav-links a::after {
+  content:''; position:absolute; bottom:-5px; left:0; right:0; height:1px;
+  background: var(--ochre); transform:scaleX(0); transform-origin:left;
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+.nav-links a:hover, .nav-links a.active { color: var(--ochre); }
+.nav-links a:hover::after, .nav-links a.active::after { transform:scaleX(1); }
+main { position: relative; z-index: 10; width: 100vw; height: 100vh; overflow: hidden; }
+.page {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 100px 10% 60px; text-align: center;
+  opacity: 0; visibility: hidden;
+  transform: translateY(36px) scale(0.985);
+  transition: opacity var(--speed) cubic-bezier(.4,0,.2,1),
+              transform var(--speed) cubic-bezier(.4,0,.2,1),
+              visibility 0s linear var(--speed);
+}
+.page.active {
+  opacity:1; visibility:visible; transform:translateY(0) scale(1);
+  transition: opacity var(--speed) cubic-bezier(.4,0,.2,1),
+              transform var(--speed) cubic-bezier(.4,0,.2,1),
+              visibility 0s linear 0s;
+}
+.page.exit { transform:translateY(-24px) scale(1.01); opacity:0; }
+.overline {
+  font-size: 0.68rem; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--clay); margin-bottom: 16px; animation: fadeUp .8s ease both .05s;
+}
+h1 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: clamp(2.6rem, 5.2vw, 5rem); font-weight: 700; line-height: 1.05;
+  color: var(--parchment); margin-bottom: 10px; animation: fadeUp .8s ease both .15s;
+}
+h1 em { font-style: italic; color: var(--sun); }
+h1 .red { color: var(--danger-warm); font-style: normal; }
+.tagline-bar {
+  display: inline-flex; align-items: center; gap: 14px;
+  background: rgba(74,48,16,0.4); border: 1px solid rgba(184,122,46,0.2);
+  border-radius: 100px; padding: 8px 22px; margin-bottom: 24px;
+  animation: fadeUp .8s ease both .28s;
+}
+.tagline-bar .pip {
+  width:6px; height:6px; border-radius:50%; background:var(--danger);
+  box-shadow:0 0 8px var(--danger); animation:blink 1.8s ease-in-out infinite;
+}
+.tagline-bar span { font-size:.75rem; letter-spacing:2px; text-transform:uppercase; color:rgba(220,190,130,.65); }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+.lead {
+  font-size: 1rem; line-height: 1.9; color: var(--text);
+  max-width: 580px; margin-bottom: 38px; font-weight: 300;
+  animation: fadeUp .8s ease both .38s;
+}
+.lead strong { color: var(--ochre); font-weight: 600; }
+.lead .red { color: var(--danger-warm); font-weight: 500; }
+.btn-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; animation: fadeUp .8s ease both .52s; }
+.btn-ven { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; animation: fadeUp .8s ease both .52s; }
+
+.btn {
+  position: relative; overflow: hidden;
+  padding: 13px 32px; border-radius: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .9rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; cursor: none; border: none;
+  transition: transform .2s, box-shadow .3s;
+}
+.btn::before {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,.06); opacity:0;
+  transition:opacity .3s; border-radius:inherit;
+}
+.btn:hover::before { opacity:1; }
+.btn-earth { background: var(--clay); color: var(--cream); border: 1px solid rgba(200,150,70,.3); box-shadow: 0 4px 18px rgba(74,48,16,.5); }
+.btn-earth:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(74,48,16,.6); }
+.btn-outline { background: transparent; color: var(--ochre); border: 1px solid rgba(184,122,46,.4); }
+.btn-outline:hover { transform:translateY(-3px); border-color:var(--ochre); box-shadow:0 0 18px rgba(184,122,46,.15); }
+.btn-alert { background: var(--danger); color: #fff; box-shadow: 0 4px 18px rgba(192,57,43,.35); }
+.btn-alert:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(192,57,43,.5); }
+.btn-leaf { background: var(--leaf-mid); color: var(--cream); border: 1px solid rgba(74,140,56,.3); box-shadow: 0 4px 18px rgba(30,58,24,.5); }
+.btn-leaf:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(30,58,24,.6); }
+.card {
+  background: var(--glass); border: 1px solid var(--glass-b);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-radius: 16px; padding: 34px 38px;
+  box-shadow: 0 24px 56px rgba(0,0,0,.5), inset 0 1px 0 rgba(220,180,100,.07);
+}
+h2 { font-family: 'Libre Baskerville', serif; font-size: 2.2rem; font-weight: 700; color: var(--parchment); margin-bottom: 8px; line-height: 1.2; }
+h2 em { font-style: italic; color: var(--sun); }
+.divider { width: 36px; height: 2px; background: linear-gradient(90deg, transparent, var(--ochre), transparent); margin: 0 auto 26px; }
+.problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 700px; margin-bottom: 28px; }
+.prob-card { background: rgba(26,18,8,.55); border: 1px solid rgba(184,122,46,.12); border-radius: 12px; padding: 22px 18px; text-align: center; backdrop-filter: blur(10px); transition: transform .35s cubic-bezier(.4,0,.2,1), border-color .3s, box-shadow .35s; cursor: none; }
+.prob-card:hover { transform: translateY(-5px); border-color: rgba(200,80,60,.35); box-shadow: 0 18px 36px rgba(0,0,0,.35); }
+.prob-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.prob-title { font-family:'Barlow Condensed',sans-serif; font-size:.95rem; font-weight:700; color:var(--parchment); margin-bottom:6px; letter-spacing:1px; text-transform:uppercase; }
+.prob-desc { font-size:.78rem; line-height:1.65; color:var(--text); }
+.prob-card.danger { border-color: rgba(192,57,43,.2); }
+.prob-card.danger .prob-title { color: #e87060; }
+.action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 620px; margin-bottom: 26px; }
+.act-card { background: rgba(26,18,8,.5); border: 1px solid rgba(184,122,46,.1); border-radius: 12px; padding: 24px 22px; text-align: left; backdrop-filter: blur(10px); transition: transform .35s, border-color .3s, box-shadow .35s; cursor: none; }
+.act-card:hover { transform: translateX(6px) translateY(-4px); border-color: rgba(120,184,88,.3); box-shadow: 0 16px 32px rgba(0,0,0,.3); }
+.act-num { font-family:'Barlow Condensed',sans-serif; font-size:2.2rem; font-weight:900; color: rgba(184,122,46,.25); line-height:1; margin-bottom:8px; }
+.act-title { font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:700; color:var(--parchment); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+.act-desc { font-size:.8rem; line-height:1.7; color:var(--text); }
+.pledge-card { width:100%; max-width:460px; }
+.form-label { display:block; font-size:.68rem; letter-spacing:2px; text-transform:uppercase; color:var(--clay); margin-bottom:6px; }
+.form-group { margin-bottom: 14px; }
+input, select, textarea {
+  width:100%; background: rgba(10,7,3,.7);
+  border: 1px solid rgba(184,122,46,.15);
+  border-radius: 8px; padding: 12px 15px;
+  font-family:'Barlow',sans-serif; font-size:.88rem;
+  color:var(--cream); outline:none; resize:none;
+  transition: border-color .3s, box-shadow .3s; appearance: none;
+}
+select option { background: #1a1208; color: var(--cream); }
+input::placeholder, textarea::placeholder { color: rgba(200,180,140,.3); }
+input:focus, select:focus, textarea:focus { border-color: rgba(184,122,46,.4); box-shadow: 0 0 0 3px rgba(184,122,46,.08); }
+.pledge-header { margin-bottom: 22px; }
+.pledge-badge { display:inline-flex; align-items:center; gap:8px; background: rgba(120,184,88,.12); border:1px solid rgba(120,184,88,.2); border-radius:100px; padding:6px 16px; margin-bottom:10px; }
+.pledge-badge span { font-size:.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--sprout); }
+.pledge-title { font-family:'Libre Baskerville',serif; font-size:1.55rem; color:var(--parchment); line-height:1.3; }
+.pledge-title em { font-style:italic; color:var(--sun); }
+.stats-wrap { width:100%; max-width:680px; }
+.stat-hero { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+.stat-box { background: rgba(26,18,8,.55); border:1px solid rgba(184,122,46,.12); border-radius:12px; padding:20px 16px; text-align:center; backdrop-filter:blur(10px); }
+.stat-num { font-family:'Barlow Condensed',sans-serif; font-size:2.4rem; font-weight:900; color:var(--sun); line-height:1; }
+.stat-unit { font-size:.65rem; letter-spacing:3px; text-transform:uppercase; color:var(--clay); margin-top:4px; }
+.stat-label { font-size:.8rem; color:var(--text); margin-top:6px; }
+.status-list { width:100%; }
+.status-row { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-radius:10px; margin-bottom:8px; background:rgba(10,7,3,.45); border:1px solid rgba(184,122,46,.1); backdrop-filter:blur(8px); transition: transform .3s, border-color .3s; }
+.status-row:hover { transform:translateX(8px); border-color:rgba(184,122,46,.22); }
+.status-left { display:flex; align-items:center; gap:12px; }
+.status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.status-name { font-size:.88rem; color:var(--parchment); font-weight:500; }
+.status-loc { font-size:.7rem; color:var(--clay); letter-spacing:1px; }
+.status-tag { font-size:.65rem; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:100px; font-weight:600; }
+.tag-ok  { background:rgba(74,140,56,.2);  color:var(--sprout); border:1px solid rgba(74,140,56,.3); }
+.tag-warn{ background:rgba(232,168,50,.15); color:var(--sun);    border:1px solid rgba(232,168,50,.25); }
+.tag-bad { background:rgba(192,57,43,.18);  color:#e87060;       border:1px solid rgba(192,57,43,.28); }
+.toast { position:fixed; bottom:100px; right:36px; background:rgba(26,18,8,.92); border:1px solid rgba(184,122,46,.25); backdrop-filter:blur(16px); border-radius:10px; padding:14px 20px; font-size:.82rem; color:var(--ochre); z-index:2000; transform:translateX(130%); transition:transform .4s cubic-bezier(.4,0,.2,1); max-width:260px; line-height:1.5; }
+.toast.show { transform:translateX(0); }
+.fab { position:fixed; bottom:34px; right:34px; z-index:900; width:58px; height:58px; background:var(--danger); border:none; border-radius:50%; color:#fff; font-size:1.35rem; cursor:none; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(192,57,43,.45); transition:transform .25s, box-shadow .25s; }
+.fab:hover { transform:scale(1.1); box-shadow:0 12px 32px rgba(192,57,43,.6); }
+.fab-ring { position:fixed; bottom:34px; right:34px; z-index:899; width:58px; height:58px; border-radius:50%; border:2px solid var(--danger); pointer-events:none; animation:fabRipple 2.2s ease-out infinite; }
+.fab-ring-2 { animation-delay:1.1s; }
+@keyframes fabRipple { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(2.1);opacity:0} }
+.progress-wrap { width:100%; max-width:520px; margin-top:10px; }
+.progress-label { display:flex; justify-content:space-between; margin-bottom:6px; }
+.progress-name { font-size:.72rem; letter-spacing:2px; text-transform:uppercase; color:var(--clay); }
+.progress-val { font-size:.72rem; color:var(--ochre); }
+.progress-bar { height:6px; background:rgba(74,48,16,.4); border-radius:100px; overflow:hidden; margin-bottom:12px; }
+.progress-fill { height:100%; border-radius:100px; background:linear-gradient(90deg, var(--clay), var(--sun)); transform-origin:left; animation:fillBar 1.8s cubic-bezier(.4,0,.2,1) both; }
+@keyframes fillBar { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── FOOTER ─────────────────────────────────────────── */
+.site-footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 600;
+  background: linear-gradient(180deg, transparent 0%, rgba(6,4,2,0.0) 0%);
+  pointer-events: none;
+}
+/* Footer toggle button */
+.footer-toggle {
+  position: fixed; bottom: 34px; left: 34px; z-index: 901;
+  width: 44px; height: 44px; background: rgba(26,18,8,0.9);
+  border: 1px solid rgba(184,122,46,.3); border-radius: 50%;
+  color: var(--ochre); font-size: .8rem; cursor: none;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  transition: transform .25s, background .25s, border-color .25s;
+  pointer-events: all;
+}
+.footer-toggle:hover { transform: scale(1.08); background: rgba(74,48,16,.8); border-color: var(--ochre); }
+.footer-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform .35s; }
+.footer-toggle.open svg { transform: rotate(180deg); }
+
+/* Footer drawer */
+.footer-drawer {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 700;
+  background: linear-gradient(180deg, rgba(8,5,2,0.0) 0%, rgba(8,5,2,0.97) 8%);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(184,122,46,.14);
+  transform: translateY(100%);
+  transition: transform .5s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  padding: 0 52px 20px;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+.footer-drawer.open {
+  transform: translateY(0);
+  pointer-events: all;
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 36px;
+  padding-top: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+/* Column 1 — Brand */
+.footer-brand {}
+.footer-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem; font-weight: 900;
+  color: var(--ochre); letter-spacing: 4px; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.footer-logo-sub {
+  font-size: .6rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--clay); margin-bottom: 14px;
+}
+.footer-desc {
+  font-size: .78rem; line-height: 1.8; color: rgba(200,180,140,.55);
+  max-width: 280px; margin-bottom: 16px;
+}
+.footer-contact { list-style: none; margin-bottom: 16px; }
+.footer-contact li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .75rem; color: rgba(180,150,100,.55); margin-bottom: 6px;
+}
+.footer-contact li span.ico {
+  width: 16px; text-align: center; font-size: .8rem; opacity: .7;
+}
+.footer-socials { display: flex; gap: 8px; }
+.footer-social-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(74,48,16,.4); border: 1px solid rgba(184,122,46,.18);
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; font-size: .75rem; color: rgba(184,122,46,.6);
+  transition: background .25s, border-color .25s, color .25s, transform .2s;
+  cursor: none;
+}
+.footer-social-btn:hover { background: rgba(74,48,16,.8); border-color: var(--ochre); color: var(--sun); transform: translateY(-3px); }
+
+/* Columns 2-4 — Links */
+.footer-col h4 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .72rem; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--ochre);
+  margin-bottom: 14px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(184,122,46,.12);
+}
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 6px; }
+.footer-links li a {
+  font-size: .78rem; color: rgba(180,150,100,.5);
+  text-decoration: none; cursor: none;
+  transition: color .25s, padding-left .25s;
+  display: inline-block;
+}
+.footer-links li a:hover { color: var(--ochre); padding-left: 6px; }
+
+/* Bottom bar */
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 16px; margin-top: 16px;
+  border-top: 1px solid rgba(184,122,46,.08);
+  max-width: 1200px; margin-left: auto; margin-right: auto;
+}
+.footer-copy {
+  font-size: .62rem; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(150,120,70,.35);
+}
+.footer-tagline {
+  font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(150,120,70,.25);
+}
+/* Hide old footer strip since footer drawer replaces it */
+.footer-strip { display: none; }
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="bg">
+  <div class="bg-base"></div>
+  <div class="bg-overlay"></div>
+  <div class="soil-texture"></div>
+  <svg class="ground" viewBox="0 0 1440 340" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="280" width="1440" height="60" fill="#0e0a04" opacity="0.5"/>
+    <ellipse cx="720" cy="282" rx="900" ry="18" fill="#130e06" opacity=".4"/>
+    <g fill="#1a1005" opacity=".5">
+      <rect x="80" y="265" width="28" height="14" rx="3"/><rect x="120" y="270" width="18" height="10" rx="2"/><circle cx="200" cy="272" r="7"/><rect x="350" y="268" width="22" height="12" rx="2"/><circle cx="500" cy="274" r="5"/><rect x="650" y="266" width="30" height="13" rx="3"/><rect x="850" y="269" width="20" height="11" rx="2"/><circle cx="1050" cy="273" r="6"/><rect x="1200" y="267" width="25" height="12" rx="2"/><rect x="1330" y="271" width="18" height="10" rx="2"/>
+    </g>
+    <g fill="#0f1a09" opacity=".5">
+      <polygon points="20,285 30,240 40,285"/><polygon points="35,285 47,248 59,285"/><polygon points="52,285 60,255 68,285"/><polygon points="280,285 292,242 304,285"/><polygon points="296,285 310,250 324,285"/><polygon points="590,285 602,245 614,285"/><polygon points="608,285 620,253 632,285"/><polygon points="900,285 914,244 928,285"/><polygon points="918,285 930,250 942,285"/><polygon points="1340,285 1355,246 1370,285"/><polygon points="1358,285 1372,252 1386,285"/><polygon points="1376,285 1388,258 1400,285"/>
+    </g>
+    <g fill="#2e5c22" opacity=".3">
+      <polygon points="160,285 165,268 170,285"/><polygon points="440,285 446,270 452,285"/><polygon points="760,285 766,265 772,285"/><polygon points="1100,285 1107,268 1114,285"/>
+    </g>
+  </svg>
+  <div class="dust" id="dust"></div>
+</div>
+<div class="grain"></div>
+
+<nav>
+  <div class="logo">JAZA ZeroWaste Project<span>Purok 2 San Lorenzo, Camarines Norte</span></div>
+  <div class="nav-links">
+    <a onclick="go('home')" id="nav-home" class="active">Home</a>
+    <a onclick="go('problem')" id="nav-problem">The Problem</a>
+    <a onclick="go('action')" id="nav-action">Solutions</a>
+    <a onclick="go('verification')" id="nav-pledge">Join</a>
+    <a onclick="go('stats')" id="nav-stats">Report</a>
+    <a onclick="go('hotlines')" id="nav-hotlines">Hotlines</a>
+  </div>
+</nav>
+
+<main>
+  <section id="home" class="page active">
+    <p class="overline">Purok 2 · San Lorenzo · Santa Elena · Camarines Norte</p>
+    <h1>Our Land Is<br><em>Suffocating.</em></h1>
+    <div class="tagline-bar"><div class="pip"></div><span>Dump-anywhere culture — It ends now</span></div>
+    <p class="lead"><strong>Improper waste disposal in Purok 2</strong> is slowly damaging our land, polluting our water, and putting the health of every resident at risk. What seems like a small act of throwing garbage anywhere creates a bigger problem for everyone. <strong>JAZA ZeroWaste Project</strong> aims to raise awareness, encourage responsible waste disposal, and inspire the community to protect the environment.</p>
+    <div class="btn-row">
+      <button class="btn btn-earth" onclick="go('problem')">See the Problem</button>
+      <button class="btn btn-leaf" onclick="go('action')">Our Solutions</button>
+      <button class="btn btn-alert" onclick="go('verification')">Join Now</button>
+    </div>
+  </section>
+
+  <section id="problem" class="page">
+    <p class="overline">The Ground Truth</p>
+    <h2>Three <em>Critical</em> Threats</h2>
+    <div class="divider"></div>
+    <div class="problem-grid">
+      <div class="prob-card danger"><div class="prob-icon">☣️</div><div class="prob-title">Soil Poisoning</div><div class="prob-desc">Household and agricultural waste dumped in open fields destroys soil nutrients and contaminates the crops that families depend on.</div></div>
+      <div class="prob-card danger"><div class="prob-icon">🌊</div><div class="prob-title">Flooding & Disease</div><div class="prob-desc">Waste clogging drainage channels causes dangerous overflow during rainy season and creates breeding grounds for dengue and leptospirosis.</div></div>
+      <div class="prob-card danger"><div class="prob-icon">🏥</div><div class="prob-title">Health Hazards</div><div class="prob-desc">Open dumping spreads foul odors, smoke, and airborne pathogens — threatening children, the elderly, and every household in the neighborhood.</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span class="progress-name">Pollution Impact Level</span><span class="progress-val">Critical</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:78%"></div></div>
+      <div class="progress-label"><span class="progress-name">Community Support</span><span class="progress-val">Growing</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:52%;animation-delay:.3s"></div></div>
+      <div class="progress-label"><span class="progress-name">Households with Proper Segregation</span><span class="progress-val">Needs Expansion</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:28%;animation-delay:.6s"></div></div>
+    </div>
+  </section>
+
+  <section id="action" class="page">
+    <p class="overline">The Path Forward</p>
+    <h2>Major <em>Steps</em> for a Change</h2>
+    <div class="divider"></div>
+    <div class="action-grid">
+      <div class="act-card"><div class="act-num">01</div><div class="act-title">Proper Waste Segregation</div><div class="act-desc">Separate your waste into biodegradable, non-biodegradable, recyclable, and hazardous materials. Proper separation makes recycling easier and prevents harmful waste from polluting the environment.</div></div>
+      <div class="act-card"><div class="act-num">02</div><div class="act-title">Use Eco-Friendly Bags</div><div class="act-desc">Avoid using single-use plastic bags. Instead, choose reusable, biodegradable, or cloth bags when shopping or carrying items. This helps reduce plastic waste that often ends up in landfills, rivers, and oceans.</div></div>
+      <div class="act-card"><div class="act-num">03</div><div class="act-title">Join Community Clean-Up Drives</div><div class="act-desc">Participating in clean-up activities helps remove waste from public areas and raises awareness about environmental responsibility. It also encourages communities to work together to maintain a cleaner and healthier environment.</div></div>
+      <div class="act-card"><div class="act-num">04</div><div class="act-title">Practice Discipline</div><div class="act-desc">Environmental change starts with personal responsibility. Always throw garbage in the proper bins and encourage others to do the same. Consistent discipline can help build a community that values cleanliness and sustainability.</div></div>
+    </div>
+  </section>
+
+  <section id="verification" class="page">
+    <div class="card pledge-card">
+      <div class="pledge-header">
+        <div class="pledge-badge"><span>🌱 Community Pledge</span></div>
+        <div class="pledge-title">Become a <em>JAZA</em><br>Member!</div>
+      </div>
+      <p style="font-size:.82rem;line-height:1.8;color:var(--text);margin-bottom:22px;">By signing up, you will learn more about the issue of improper waste disposal in Purok 2, San Lorenzo and its impact on the community and the environment. You will also have the opportunity to participate in community projects and clean-up activities that aim to promote a cleaner and healthier place. Members may also choose to support the project through voluntary donations, which will help fund environmental initiatives and waste management efforts.</p>
+      <div class="card" style="padding:20px 24px;margin-bottom:0;">
+        <div class="pledge-badge" style="margin-bottom:10px;"><span>ARE YOU SURE YOU WANT TO JOIN?</span></div>
+        <div class="btn-ven">
+          <button class="btn btn-earth" onclick="go('pledge')">Yes, Join!</button>
+          <button class="btn btn-outline" onclick="go('okay')">Not Now</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pledge" class="page">
+    <div class="card pledge-card">
+      <div class="pledge-header">
+        <div class="pledge-badge"><span>🌱 Community Pledge</span></div>
+        <div class="pledge-title">Become a <em>Guardian</em><br>of Purok 2</div>
+      </div>
+      <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="name" placeholder="Your full name"></div>
+      <div class="form-group"><label class="form-label">Sitio / Block</label><input type="text" id="sitio" placeholder="e.g. Block 3, Purok 2"></div>
+      <div class="form-group"><label class="form-label">Choose Your Role</label>
+        <select id="role">
+          <option value="">— Select a role —</option>
+          <option>Block Monitor</option><option>Compost Coordinator</option><option>Clean Monday Organizer</option><option>Segregation Educator</option><option>General Supporter</option>
+        </select>
+      </div>
+      <button class="btn btn-earth" style="width:100%;margin-top:4px" onclick="submitPledge()">❗ Submit My Pledge ❗</button>
+    </div>
+  </section>
+
+  <section id="okay" class="page">
+    <div class="card pledge-card">
+      <div class="pledge-header">
+        <div class="pledge-badge"><span>🌱 We Understand</span></div>
+        <div class="pledge-title" style="font-size:1.1rem;line-height:1.6;">Thank you for visiting our website and taking the time to consider joining our community. While we respect your decision not to join at this time, we truly appreciate your interest. You are always welcome to come back anytime if you change your mind. Your support and awareness of our cause still mean a lot to us. 🌱</div>
+      </div>
+      <button class="btn btn-leaf" style="margin-top:10px" onclick="go('home')">Back to Home</button>
+    </div>
+  </section>
+
+  <section id="stats" class="page">
+    <p class="overline">Program Progress</p>
+    <h2>Community <em>Status Report</em></h2>
+    <div class="divider"></div>
+    <div class="stats-wrap">
+      <div class="stat-hero">
+        <div class="stat-box"><div class="stat-num" id="pledgeCount">0</div><div class="stat-unit">Pledges</div><div class="stat-label">Participating households</div></div>
+        <div class="stat-box"><div class="stat-num">12</div><div class="stat-unit">Tonnes</div><div class="stat-label">Waste cleared to date</div></div>
+        <div class="stat-box"><div class="stat-num">4</div><div class="stat-unit">Weeks</div><div class="stat-label">Clean Monday drives held</div></div>
+      </div>
+      <div class="status-list">
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#4a8c38;box-shadow:0 0 6px #4a8c38"></div><div><div class="status-name">Block 1 — Tapyas Area</div><div class="status-loc">Scheduled collection active</div></div></div><div class="status-tag tag-ok">Compliant</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#e8a832;box-shadow:0 0 6px #e8a832"></div><div><div class="status-name">Block 2 — Purok Center</div><div class="status-loc">Several open dumping incidents reported</div></div></div><div class="status-tag tag-warn">Monitor</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#c0392b;box-shadow:0 0 6px #c0392b"></div><div><div class="status-name">Block 3 — Palaisdaan Road</div><div class="status-loc">Active drainage blockage incident</div></div></div><div class="status-tag tag-bad">Critical</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#4a8c38;box-shadow:0 0 6px #4a8c38"></div><div><div class="status-name">Compost Site — Barangay Hall</div><div class="status-loc">Operating on regular schedule</div></div></div><div class="status-tag tag-ok">Active</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hotlines" class="page">
+    <p class="overline">Emergency Contacts</p>
+    <h2>Important <em>Hotlines</em></h2>
+    <div class="divider"></div>
+    <div class="stats-wrap">
+      <div class="status-list">
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#4a8c38;box-shadow:0 0 6px #4a8c38"></div><div><div class="status-name">🏠 Barangay San Lorenzo Hall</div><div class="status-loc">Local governance & community concerns</div></div></div><div class="status-tag tag-ok">(054) 123-4567</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#e8a832;box-shadow:0 0 6px #e8a832"></div><div><div class="status-name">♻️ Santa Elena MENRO</div><div class="status-loc">Municipal Environment & Natural Resources Office</div></div></div><div class="status-tag tag-warn">(054) 765-4321</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#c0392b;box-shadow:0 0 6px #c0392b"></div><div><div class="status-name">🚑 Municipal Health Office</div><div class="status-loc">Health hazards & disease concerns</div></div></div><div class="status-tag tag-bad">911 / (054) 000-0000</div></div>
+        <div class="status-row"><div class="status-left"><div class="status-dot" style="background:#4a8c38;box-shadow:0 0 6px #4a8c38"></div><div><div class="status-name">📞 JAZA Project Coordinator</div><div class="status-loc">Community pledges & volunteer coordination</div></div></div><div class="status-tag tag-ok">0906-131-1291</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- FAB -->
+<button class="fab" onclick="go('verification')" title="Join">❗</button>
+<div class="fab-ring"></div>
+<div class="fab-ring fab-ring-2"></div>
+
+<!-- Footer toggle button -->
+<button class="footer-toggle" id="footerToggle" onclick="toggleFooter()" title="About this project">
+  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+</button>
+
+<!-- Footer Drawer -->
+<footer class="footer-drawer" id="footerDrawer">
+  <div class="footer-inner">
+
+    <!-- Col 1: Brand -->
+    <div class="footer-brand">
+      <div class="footer-logo">JAZA ZeroWaste</div>
+      <div class="footer-logo-sub">Purok 2 · San Lorenzo · Sta. Elena · Camarines Norte</div>
+      <p class="footer-desc">A community-led environmental initiative dedicated to ending improper waste disposal in Purok 2 through education, action, and collective responsibility. Together we protect our land for future generations.</p>
+      <ul class="footer-contact">
+        <li><span class="ico">✉</span> jazazerowaste@community.ph</li>
+        <li><span class="ico">📍</span> Purok 2, San Lorenzo, Sta. Elena, Cam. Norte</li>
+        <li><span class="ico">📞</span> 09XX-XXX-XXXX (JAZA Coordinator)</li>
+      </ul>
+      <div class="footer-socials">
+        <a class="footer-social-btn" href="#" title="Facebook">f</a>
+        <a class="footer-social-btn" href="#" title="YouTube">▶</a>
+        <a class="footer-social-btn" href="#" title="Twitter / X">𝕏</a>
+        <a class="footer-social-btn" href="#" title="LinkedIn">in</a>
+      </div>
+    </div>
+
+    <!-- Col 2: Pages -->
+    <div class="footer-col">
+      <h4>Pages</h4>
+      <ul class="footer-links">
+        <li><a onclick="go('home');toggleFooter()">Home</a></li>
+        <li><a onclick="go('problem');toggleFooter()">The Problem</a></li>
+        <li><a onclick="go('action');toggleFooter()">Solutions</a></li>
+        <li><a onclick="go('verification');toggleFooter()">Join the Project</a></li>
+        <li><a onclick="go('stats');toggleFooter()">Status Report</a></li>
+        <li><a onclick="go('hotlines');toggleFooter()">Hotlines</a></li>
+      </ul>
+    </div>
+
+    <!-- Col 3: Get Involved -->
+    <div class="footer-col">
+      <h4>Get Involved</h4>
+      <ul class="footer-links">
+        <li><a onclick="go('pledge');toggleFooter()">Sign the Pledge</a></li>
+        <li><a href="#">Volunteer Sign-Up</a></li>
+        <li><a href="#">Donate / Support</a></li>
+        <li><a href="#">Report a Dump Site</a></li>
+        <li><a href="#">Request a Clean-Up Drive</a></li>
+        <li><a href="#">Become a Block Monitor</a></li>
+      </ul>
+    </div>
+
+    <!-- Col 4: Support -->
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul class="footer-links">
+        <li><a href="#">Contact Us</a></li>
+        <li><a href="#">Terms & Conditions</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Barangay San Lorenzo</a></li>
+        <li><a href="#">Santa Elena MENRO</a></li>
+        <li><a href="#">Municipal Health Office</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span class="footer-copy">JAZA ZeroWaste Project © 2026 · Purok 2, San Lorenzo, Sta. Elena, Camarines Norte</span>
+    <span class="footer-tagline">Zero Waste · Zero Excuses · One Community</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* Cursor */
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cur.style.left=mx+'px'; cur.style.top=my+'px'; });
+(function animRing(){ rx += (mx-rx)*0.1; ry += (my-ry)*0.1; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(animRing); })();
+
+/* Dust motes */
+const dustEl = document.getElementById('dust');
+for(let i=0;i<18;i++){ const d=document.createElement('div'); d.className='mote'; const sz=1+Math.random()*2.5; d.style.cssText=`left:${Math.random()*100}%;bottom:${8+Math.random()*40}%;width:${sz}px;height:${sz}px;animation-duration:${8+Math.random()*10}s,${2+Math.random()*2.5}s;animation-delay:-${Math.random()*12}s,-${Math.random()*4}s;`; dustEl.appendChild(d); }
+
+/* Page navigation */
+let pledgeCount=0;
+function go(id){
+  const active=document.querySelector('.page.active');
+  if(active){ active.classList.add('exit'); setTimeout(()=>active.classList.remove('active','exit'),280); }
+  setTimeout(()=>{ const t=document.getElementById(id); if(t) t.classList.add('active'); if(id==='stats') animCount(); },220);
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+  const ln=document.getElementById('nav-'+id); if(ln) ln.classList.add('active');
+}
+
+function animCount(){
+  const el=document.getElementById('pledgeCount');
+  let n=0; const target=pledgeCount;
+  const step=Math.ceil(target/40)||1;
+  const iv=setInterval(()=>{ n=Math.min(n+step,target); el.textContent=n; if(n>=target) clearInterval(iv); },35);
+}
+
+function submitPledge(){
+  const name=document.getElementById('name').value.trim();
+  const role=document.getElementById('role').value;
+  if(!name){ showToast('⚠️ Please enter your name.'); return; }
+  if(!role){ showToast('⚠️ Please choose a role.'); return; }
+  pledgeCount++;
+  showToast(`❗ Thank you, ${name}! Your pledge as ${role} has been recorded.`);
+  document.getElementById('name').value='';
+  document.getElementById('sitio').value='';
+  document.getElementById('role').value='';
+  setTimeout(()=>go('stats'),2400);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3400);
+}
+
+/* Footer toggle */
+let footerOpen = false;
+function toggleFooter(){
+  footerOpen = !footerOpen;
+  const drawer = document.getElementById('footerDrawer');
+  const btn = document.getElementById('footerToggle');
+  drawer.classList.toggle('open', footerOpen);
+  btn.classList.toggle('open', footerOpen);
+}
+
+/* Close footer on page nav */
+const origGo = go;
+</script>
+</body>
+</html>
